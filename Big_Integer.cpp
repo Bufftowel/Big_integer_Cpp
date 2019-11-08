@@ -187,11 +187,11 @@ public:
         ans.removeZeros();
         return ans;
     }
-    // calling karatsuba will inevitably pass this (pointer to current object), and if katatsuba
-    // is not a const function, then this will cause error, as it may change it.
-    // if we declare karatsuba as static that would mean it won't receive
-    // a implicit object (They don't have access to this pointer). A Static member function can be
-    // called even without a object(using :: and class name). A static member function can only access static
+         // calling karatsuba will inevitably pass this (pointer to current object), and if katatsuba
+        // is not a const function, then this will cause error, as it may change it.
+       // if we declare karatsuba as static that would mean it won't receive
+      // a implicit object (They don't have access to this pointer). A Static member function can be
+     // called even without a object(using :: and class name). A static member function can only access static
     // static data member, other static member functions and any other functions from outside the class.
     bool operator > (const BigInt &num) const
     {
@@ -301,9 +301,9 @@ public:
             cnt++,l/=10;
         return 9*(a.size()-1)+cnt;
     }
-    // using reference of streams as they immediately need to be changed after use.
-    //  cannot define methods in stream classes (as left operand is the one operator's definition should be in)
-    //   hence overloading (<<,>>) as friend (not member function of this class but the scope is only in this class)
+       // using reference of streams as they immediately need to be changed after use.
+      //  cannot define methods in stream classes (as left operand is the one operator's definition should be in)
+     //   hence overloading (<<,>>) as friend (not member function of this class but the scope is only in this class)
     //    (you can also define them globally.)
     friend istream& operator >> (istream &stream, BigInt &a)  // return types are streams themselves so that chaining
     {
