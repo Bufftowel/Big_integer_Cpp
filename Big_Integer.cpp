@@ -5,16 +5,14 @@ using namespace std;
 
 class BigInt
 {
-
-    #ifndef ll
+    #undef ll
     typedef long long int ll;
-    #endif
     typedef vector<int> vi;
-    #define p10 1000000000
-    #define range 9
+    ll pow;
+    int Base;
     vi a;
     bool sign;
-    static vector<ll> Convert_Base(vector<int> num,int n)
+    /*static vector<ll> Convert_Base(vector<int> num,int n)
     {
         vector<ll> ans;
         ll carry = 0;
@@ -31,11 +29,37 @@ class BigInt
             }
         }
         return ans;
+    }*/
+    BigInt Convert_Base(int newBase)
+    {
+        if(newBase > 9) return *this;
+        BigInt res;
+        res.Base = newBase;
+        res.pow = 1;
+        for(int i = 0; i < newBase; i++) res.pow = res.pow * 10;
+        res.Base = newBase;
+        stringstream ss;
+        string s;
+        ss << *this;
+        ss >> s;
+        res.read(s);
+        return res;
     }
 public:
     BigInt()
     {
         sign = 1;
+        pow = 1000000000;
+        Base = 9;
+    }
+    template<typename T>
+    BigInt(T val) : BigInt()
+    {
+        stringstream ss;
+        ss << val;
+        string s;
+        ss >> s;
+        read(s);
     }
     void read(string &s)
     {
@@ -47,10 +71,10 @@ public:
                 sign = !sign;
             k++;
         }
-        for(int i = s.size()-1; i>=k; i-=range)
+        for(int i = s.size()-1; i>=k; i-=Base)
         {
             curr = 0;
-            for(int j = max(k,i-range+1); j<=i; ++j)
+            for(int j = max(k,i-Base+1); j<=i; ++j)
             {
                 curr = curr * 10 + s[j]-'0';
             }
@@ -90,8 +114,8 @@ public:
             {
                 carry += a[i];
             }
-            ans.a[i] = carry % p10;
-            carry = carry / p10;
+            ans.a[i] = carry % pow;
+            carry = carry / pow;
         }
         if(carry)
             ans.a.push_back(carry);
@@ -125,7 +149,7 @@ public:
                     ans.a[i] = ans.a[i] - num.a[i] + carry;
                     if(ans.a[i] < 0)
                     {
-                        ans.a[i] += p10;
+                        ans.a[i] += pow;
                         carry = -1;
                     }
                     else
@@ -136,7 +160,7 @@ public:
                     ans.a[i] = ans.a[i] + carry;
                     if(ans.a[i] < 0)
                     {
-                        ans.a[i] += p10;
+                        ans.a[i] += pow;
                         carry = -1;
                     }
                     else
@@ -171,20 +195,31 @@ public:
             n.push_back(0);
         while(n.size() > m.size())
             m.push_back(0);
-        c = karatsuba(n,m);
+        c = karatsuba(n, m, num.pow);
         ll carry = 0;
         for(int i = 0; i<(int)c.size(); ++i)
         {
             carry += c[i];
-            ans.a.push_back(carry % p10);
-            carry = carry/p10;
+            ans.a.push_back(carry % pow);
+            carry = carry/pow;
         }
         while(carry)
         {
-            ans.a.push_back(carry % p10);
-            carry = carry/p10;
+            ans.a.push_back(carry % pow);
+            carry = carry/pow;
         }
         ans.removeZeros();
+        return ans;
+    }
+    template<typename T>
+    T operator % (T MoDuLo)
+    {
+        ll ans = 0;
+        for(int i = a.size() - 1; i > -1; i--)
+        {
+            ans = (ans * pow + a[i]) % MoDuLo;
+        }
+        if(!sign) ans = -ans;
         return ans;
     }
          // calling karatsuba will inevitably pass this (pointer to current object), and if katatsuba
@@ -296,18 +331,20 @@ public:
     }
     int length()
     {
-        int l = a[a.size()-1], cnt = 0;
+        int l = a[a.size() - 1], cnt = 0;
         while(l)
-            cnt++,l/=10;
-        return 9*(a.size()-1)+cnt;
+        {
+            cnt++;
+            l /= 10;
+        }
+        return Base * (a.size() - 1) + cnt;
     }
        // using reference of streams as they immediately need to be changed after use.
       //  cannot define methods in stream classes (as left operand is the one operator's definition should be in)
      //   hence overloading (<<,>>) as friend (not member function of this class but the scope is only in this class)
     //    (you can also define them globally.)
     friend istream& operator >> (istream &stream, BigInt &a)  // return types are streams themselves so that chaining
-    {
-        // is possible. e.g. cin>>a>>b;
+    {                                                        // is possible. e.g. cin >> a >> b;
         string s;
         stream >> s;
         a.read(s);
@@ -320,16 +357,16 @@ public:
         if(num.a.empty())
             stream << '0';
         else
-            stream << num.a[num.a.size()-1];
-        for(int i=num.a.size()-2; i>-1; --i)
+            stream << num.a[num.a.size() - 1];
+        for(int i= num.a.size() - 2; i > -1; --i)
         {
-            stream << setw(range) << setfill('0') << num.a[i];
+            stream << setw(num.Base) << setfill('0') << num.a[i];
         }
         // stream << setfill(' '); // changing filler back to ' '
         return stream;
     }
     // Read above, where * is overloaded to understand why this is declared as static.
-    static vector<ll> karatsuba(vector<ll> a,vector<ll> b)
+    static vector<ll> karatsuba(vector<ll> a,vector<ll> b,ll pow)
     {
         int n = a.size();
         vector<ll> ans(2*n,0);
@@ -341,35 +378,35 @@ public:
                 carry = 0;
                 for(int j = 0; j < n; ++j)
                 {
-                    ans[i+j] += a[i]*b[j]+carry;
-                    carry = ans[i+j]/p10;
-                    ans[i+j] = ans[i+j]%p10;
+                    ans[i + j] += a[i] * b[j] + carry;
+                    carry = ans[i+j] / pow;
+                    ans[i + j] = ans[i+j] % pow;
                 }
                 if(carry)
-                    ans[i+n] += carry;
+                    ans[i + n] += carry;
             }
             return ans;
         }
-        int m = n>>1, k;
+        int m = n >> 1, k;
         k = n - m;
         ll carry = 0;
         vector<ll> x1(a.begin(),a.begin()+m);
         vector<ll> y1(b.begin(),b.begin()+m);
         vector<ll> x2(a.begin()+m,a.end());
         vector<ll> y2(b.begin()+m,b.end());
-        vector<ll> x1y1 = karatsuba(x1,y1);
-        vector<ll> x2y2 = karatsuba(x2,y2);
+        vector<ll> x1y1 = karatsuba(x1, y1, pow);
+        vector<ll> x2y2 = karatsuba(x2, y2, pow);
         for(int i = 0; i<m; i++)
         {
             x2[i] = x2[i] + x1[i] + carry;
-            carry = x2[i]/p10;
-            x2[i] = x2[i]%p10;
+            carry = x2[i]/pow;
+            x2[i] = x2[i]%pow;
         }
         if(k>m)
         {
             x2[k - 1] = x2[k - 1] + carry;
-            carry = x2[k - 1]/p10;
-            x2[k - 1] = x2[k - 1]%p10;
+            carry = x2[k - 1]/pow;
+            x2[k - 1] = x2[k - 1]%pow;
         }
         if(carry)
             x2.push_back(carry);
@@ -377,14 +414,14 @@ public:
         for(int i = 0; i<m; i++)
         {
             y2[i] = y2[i] + y1[i] + carry;
-            carry = y2[i]/p10;
-            y2[i] = y2[i]%p10;
+            carry = y2[i]/pow;
+            y2[i] = y2[i]%pow;
         }
         if(k>m)
         {
             y2[k - 1] = y2[k - 1] + carry;
-            carry = y2[k - 1]/p10;
-            y2[k - 1] = y2[k - 1]%p10;
+            carry = y2[k - 1]/pow;
+            y2[k - 1] = y2[k - 1]%pow;
         }
         if(carry)
             y2.push_back(carry);
@@ -393,7 +430,7 @@ public:
         while(y2.size()<x2.size())
             y2.push_back(0);
         carry = 0;
-        vector<ll> mid = karatsuba(x2,y2);
+        vector<ll> mid = karatsuba(x2,y2,pow);
         k = mid.size();
         for(int i = 0; i<(int)ans.size(); ++i)
         {
@@ -405,8 +442,8 @@ public:
                 if(!carry)
                     break;
             }
-            carry = ans[i] / p10;
-            ans[i] = ans[i] % p10;
+            carry = ans[i] / pow;
+            ans[i] = ans[i] % pow;
         }
         carry = 0;
         for(int i = 0; i<(int)ans.size(); ++i)
@@ -419,8 +456,8 @@ public:
                 if(!carry)
                     break;
             }
-            carry = ans[i+2*m] / p10;
-            ans[i+2*m] = ans[i+2*m] % p10;
+            carry = ans[i+2*m] / pow;
+            ans[i+2*m] = ans[i+2*m] % pow;
         }
         carry = 0;
         for(int i = 0; i<k; ++i)
@@ -432,7 +469,7 @@ public:
                 mid[i] -= x2y2[i];
             if(mid[i]<0)
             {
-                mid[i] += 3ll*p10;
+                mid[i] += 3ll * pow;
                 carry = 3;
             }
         }
@@ -440,14 +477,14 @@ public:
         for(int i = 0; i<k; ++i)
         {
             ans[i + m] += mid[i];
-            carry = a[i+m] / p10;
-            a[i+m] = a[i+m] % p10;
+            carry = a[i+m] / pow;
+            a[i+m] = a[i+m] % pow;
         }
         while(carry)
         {
             ans[k]+=carry;
-            carry = ans[k]/p10;
-            ans[k] = ans[k] % p10;
+            carry = ans[k]/pow;
+            ans[k] = ans[k] % pow;
             k++;
         }
         return ans;
@@ -457,7 +494,8 @@ public:
 int main()
 {
     BigInt a, b, c;
-    cin >> a >> b;
-    cout<< a * b;
+    int m;
+    cin >> a >> m;
+    cout<< a % m;
     return 0;
 }
