@@ -8,6 +8,7 @@ class BigInt
     #undef ll
     typedef long long int ll;
     typedef vector<int> vi;
+    #define defBase 1000000000;
     ll pow;
     int Base;
     vi a;
@@ -39,7 +40,6 @@ class BigInt
         res.Base = newBase;
         res.pow = 1;
         for(int i = 0; i < newBase; i++) res.pow = res.pow * 10;
-        res.Base = newBase;
         stringstream ss;
         string s;
         ss << *this;
@@ -76,8 +76,6 @@ public:
         stringstream ss;
         ss << *this;
         ss >> s;
-        if(!sign)
-            s = '-' + s;
         return s;
     }
     BigInt operator + (const BigInt &b) const
@@ -165,28 +163,33 @@ public:
     }
     BigInt operator * (const BigInt &num) const // this(pointer) is also passed implicitly, we cannot change that either
     {
-        vector<ll> n(a.begin(), a.end()), m(num.a.begin(), num.a.end()), c;
+        BigInt num1 = Convert_Base(5);
+        BigInt num2 = num.Convert_Base(5);
+        vector<ll> n(num1.a.begin(), num1.a.end());
+        vector<ll> m(num2.a.begin(), num2.a.end());
         BigInt ans;
         ans.sign = !(sign ^ num.sign);
         while(n.size() < m.size())
             n.push_back(0);
         while(n.size() > m.size())
             m.push_back(0);
-        c = karatsuba(n, m, num.pow);
+        vector<ll> res = karatsuba(n, m);
         ll carry = 0;
-        for(int i = 0; i < (int)c.size(); ++i)
+        ans.Base = num1.Base;
+        ans.pow = num1.pow;
+        for(int i = 0; i < (int)res.size(); ++i)
         {
-            carry += c[i];
-            ans.a.push_back(carry % pow);
-            carry = carry / pow;
+            carry = carry + res[i];
+            ans.a.push_back(carry % ans.pow);
+            carry = carry / ans.pow;
         }
         while(carry)
         {
-            ans.a.push_back(carry % pow);
-            carry = carry / pow;
+            ans.a.push_back(carry % ans.pow);
+            carry = carry / ans.pow;
         }
         ans.removeZeros();
-        return ans;
+        return ans.Convert_Base(9);
     }
     template<typename T>
     T operator % (T MoDuLo)
@@ -339,140 +342,89 @@ public:
         {
             stream << setw(num.Base) << setfill('0') << num.a[i];
         }
-        // stream << setfill(' '); // changing filler back to ' '
+        stream << setfill(' '); // changing filler back to ' '
         return stream;
     }
     // Read above, where * is overloaded to understand why this is declared as static.
-    static vector<ll> karatsuba(vector<ll> a,vector<ll> b,ll pow)
+    static vector<ll> karatsuba(vector<ll> a, vector<ll> b)
     {
         int n = a.size();
-        vector<ll> ans(2*n, 0);
-        //if(n <= 1)
+        vector<ll> ans(2 * n, 0);
+        if(n <= 64)
         {
-            ll carry;
             for(int i = 0; i < n; ++i)
             {
-                carry = 0;
                 for(int j = 0; j < n; ++j)
                 {
-                    ans[i + j] += a[i] * b[j] + carry;
-                    carry = ans[i + j] / pow;
-                    ans[i + j] = ans[i + j] % pow;
+                    ans[i + j] += a[i] * b[j];
                 }
-                if(carry)
-                    ans[i + n] += carry;
             }
             return ans;
         }
-        int m = n >> 1, k;
-        k = n - m;
-        ll carry = 0;
-        vector<ll> x1(a.begin(),a.begin()+m);
-        vector<ll> y1(b.begin(),b.begin()+m);
-        vector<ll> x2(a.begin()+m,a.end());
-        vector<ll> y2(b.begin()+m,b.end());
-        vector<ll> x1y1 = karatsuba(x1, y1, pow);
-        vector<ll> x2y2 = karatsuba(x2, y2, pow);
-        for(int i = 0; i<m; i++)
+        int k = n >> 1;
+        vector<ll> x2(a.begin(), a.begin() + k);
+        vector<ll> y2(b.begin(),b.begin() + k);
+        vector<ll> x1(a.begin() + k, a.end());
+        vector<ll> y1(b.begin() + k, b.end());
+        vector<ll> x1y1 = karatsuba(x1, y1);
+        vector<ll> x2y2 = karatsuba(x2, y2);
+        for(int i = 0; i < k; i++)
         {
-            x2[i] = x2[i] + x1[i] + carry;
-            carry = x2[i]/pow;
-            x2[i] = x2[i]%pow;
+            x1[i] = x2[i] + x1[i];
         }
-        if(k>m)
+        for(int i = 0; i < k; i++)
         {
-            x2[k - 1] = x2[k - 1] + carry;
-            carry = x2[k - 1]/pow;
-            x2[k - 1] = x2[k - 1]%pow;
+            y1[i] = y2[i] + y1[i];
         }
-        if(carry)
-            x2.push_back(carry);
-        carry = 0;
-        for(int i = 0; i<m; i++)
+        vector<ll> val = karatsuba(x1, y1);
+        for(int i = 0; i < (int)val.size(); ++i)
         {
-            y2[i] = y2[i] + y1[i] + carry;
-            carry = y2[i]/pow;
-            y2[i] = y2[i]%pow;
+            if(i < (int)x1y1.size()) val[i] -= x1y1[i];
+            if(i < (int)x2y2.size()) val[i] -= x2y2[i];
+            ans[i + k] += val[i];
         }
-        if(k>m)
+        for(int i = 0; i < (int)x1y1.size(); i++)
         {
-            y2[k - 1] = y2[k - 1] + carry;
-            carry = y2[k - 1]/pow;
-            y2[k - 1] = y2[k - 1]%pow;
+            ans[i + 2 * k] += x1y1[i];
         }
-        if(carry)
-            y2.push_back(carry);
-        while(y2.size()>x2.size())
-            x2.push_back(0);
-        while(y2.size()<x2.size())
-            y2.push_back(0);
-        carry = 0;
-        vector<ll> mid = karatsuba(x2,y2,pow);
-        k = mid.size();
-        for(int i = 0; i<(int)ans.size(); ++i)
+        for(int i = 0; i < (int)x2y2.size(); i++)
         {
-            if(i < (int)x2y2.size())
-                ans[i] += x2y2[i];
-            else
-            {
-                ans[i] += carry;
-                if(!carry)
-                    break;
-            }
-            carry = ans[i] / pow;
-            ans[i] = ans[i] % pow;
-        }
-        carry = 0;
-        for(int i = 0; i<(int)ans.size(); ++i)
-        {
-            if(i<(int)x1y1.size())
-                ans[i] += x1y1[i];
-            else
-            {
-                ans[i] += carry;
-                if(!carry)
-                    break;
-            }
-            carry = ans[i+2*m] / pow;
-            ans[i+2*m] = ans[i+2*m] % pow;
-        }
-        carry = 0;
-        for(int i = 0; i<k; ++i)
-        {
-            mid[i] -= carry;
-            if(i<(int)x1y1.size())
-                mid[i] -= x1y1[i];
-            if(i<(int)x2y2.size())
-                mid[i] -= x2y2[i];
-            if(mid[i]<0)
-            {
-                mid[i] += 3ll * pow;
-                carry = 3;
-            }
-        }
-        carry = 0;
-        for(int i = 0; i<k; ++i)
-        {
-            ans[i + m] += mid[i];
-            carry = a[i+m] / pow;
-            a[i+m] = a[i+m] % pow;
-        }
-        while(carry)
-        {
-            ans[k]+=carry;
-            carry = ans[k]/pow;
-            ans[k] = ans[k] % pow;
-            k++;
+            ans[i] += x2y2[i];
         }
         return ans;
+    }
+    friend BigInt Multiply_Naive(const BigInt &num1,const BigInt &num2)
+    {
+        vector<ll> x(num1.a.begin(),num1.a.end()), y(num2.a.begin(),num2.a.end());
+        BigInt res;
+        res.sign = !(num1.sign ^ num2.sign);
+        while(x.size() < y.size()) x.push_back(0);
+        while(x.size() > y.size()) y.push_back(0);
+        int n = x.size();
+        vector<ll> ans(2 * n,0);
+        ll carry;
+        for(int i = 0; i < n; i++)
+        {
+            carry = 0;
+            for(int j = 0; j < n; j++)
+            {
+                ans[i+j] += x[i] * y[j] + carry;
+                carry = ans[i + j] / defBase;
+                ans[i + j] = ans[i + j] % defBase;
+            }
+            if(carry) ans[i + n] += carry;
+        }
+        for(int i = 0; i<(int)ans.size(); i++)
+            res.a.push_back(ans[i]);
+        res.removeZeros();
+        return res;
     }
 };
 
 int main()
 {
-    BigInt a, b, c;
-    int m;
-    cin >> a >> m;
-    cout<< a * m;
+    BigInt a, b;
+    cin >> a >> b;
+    cout << a * b << "\n";
     return 0;
 }
