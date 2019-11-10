@@ -12,25 +12,27 @@ class BigInt
     int Base;
     vi a;
     bool sign;
-    /*static vector<ll> Convert_Base(vector<int> num,int n)
+    void read(string &s)
     {
-        vector<ll> ans;
-        ll carry = 0;
-        ll mod = 1;
-        while(n--)
-            mod = mod * 10;
-        for(int i = 0; i < (int)num.size(); ++i)
+        ll curr;
+        int k = 0;
+        while(k < (int)s.size() && (s[k] == '-' || s[k] == '+'))
         {
-            carry = carry + num[i];
-            while(carry >= mod)
-            {
-                ans.push_back(carry % mod);
-                carry = carry / mod;
-            }
+            if(s[k] == '-') sign = !sign;
+            k++;
         }
-        return ans;
-    }*/
-    BigInt Convert_Base(int newBase)
+        for(int i = s.size() - 1; i >= k; i -= Base)
+        {
+            curr = 0;
+            for(int j = max(k, i - Base + 1); j <= i; ++j)
+            {
+                curr = curr * 10 + s[j] - '0';
+            }
+            a.push_back(curr);
+        }
+        removeZeros();
+    }
+    BigInt Convert_Base(int newBase) const
     {
         if(newBase > 9) return *this;
         BigInt res;
@@ -44,6 +46,13 @@ class BigInt
         ss >> s;
         res.read(s);
         return res;
+    }
+    void removeZeros()
+    {
+        while(!a.empty() && !a.back())
+            a.pop_back();
+        if(a.empty())
+            sign = 1;
     }
 public:
     BigInt()
@@ -61,27 +70,6 @@ public:
         ss >> s;
         read(s);
     }
-    void read(string &s)
-    {
-        ll curr;
-        int k = 0;
-        while(k<(int)s.size() && (s[k]=='-' || s[k]=='+'))
-        {
-            if(s[k]=='-')
-                sign = !sign;
-            k++;
-        }
-        for(int i = s.size()-1; i>=k; i-=Base)
-        {
-            curr = 0;
-            for(int j = max(k,i-Base+1); j<=i; ++j)
-            {
-                curr = curr * 10 + s[j]-'0';
-            }
-            a.push_back(curr);
-        }
-        removeZeros();
-    }
     string to_string()
     {
         string s;
@@ -92,28 +80,17 @@ public:
             s = '-' + s;
         return s;
     }
-    void removeZeros()
-    {
-        while(!a.empty() && !a.back())
-            a.pop_back();
-        if(a.empty())
-            sign = 1;
-    }
     BigInt operator + (const BigInt &b) const
     {
-        if(sign!=b.sign)
-            return *this -(-b);
+        if(sign != b.sign)
+            return *this - (-b);
         BigInt ans = b;
         ll carry = 0;
-        for(int i=0; i<(int)max(a.size(),b.a.size()); ++i)
+        for(int i = 0; i < int(max(a.size(), b.a.size())); ++i)
         {
-            if(i==(int)ans.a.size())
-                ans.a.push_back(0);
+            if(i == (int)ans.a.size()) ans.a.push_back(0);
             carry = carry + ans.a[i];
-            if(i<(int)a.size())
-            {
-                carry += a[i];
-            }
+            if(i < (int)a.size()) carry += a[i];
             ans.a[i] = carry % pow;
             carry = carry / pow;
         }
@@ -142,7 +119,7 @@ public:
             }
             BigInt ans = *this;
             ll carry = 0;
-            for(int i=0; i< (int)ans.a.size(); ++i)
+            for(int i = 0; i < (int)ans.a.size(); ++i)
             {
                 if(i < (int)num.a.size())
                 {
@@ -188,7 +165,7 @@ public:
     }
     BigInt operator * (const BigInt &num) const // this(pointer) is also passed implicitly, we cannot change that either
     {
-        vector<ll> n(a.begin(),a.end()),m(num.a.begin(),num.a.end()),c;
+        vector<ll> n(a.begin(), a.end()), m(num.a.begin(), num.a.end()), c;
         BigInt ans;
         ans.sign = !(sign ^ num.sign);
         while(n.size() < m.size())
@@ -197,16 +174,16 @@ public:
             m.push_back(0);
         c = karatsuba(n, m, num.pow);
         ll carry = 0;
-        for(int i = 0; i<(int)c.size(); ++i)
+        for(int i = 0; i < (int)c.size(); ++i)
         {
             carry += c[i];
             ans.a.push_back(carry % pow);
-            carry = carry/pow;
+            carry = carry / pow;
         }
         while(carry)
         {
             ans.a.push_back(carry % pow);
-            carry = carry/pow;
+            carry = carry / pow;
         }
         ans.removeZeros();
         return ans;
@@ -232,9 +209,9 @@ public:
     {
         if(sign != num.sign)
             return sign > num.sign;
-        if(a.size()!=num.a.size())
+        if(a.size() != num.a.size())
             return a.size() > num.a.size();
-        for(int i = a.size()-1; i > -1; --i)
+        for(int i = a.size() - 1; i > -1; --i)
         {
             if(a[i] != num.a[i])
             {
@@ -252,7 +229,7 @@ public:
             return 0;
         if(a.size() != num.a.size())
             return 0;
-        for(int i = a.size()-1; i > -1 ; --i)
+        for(int i = a.size() - 1; i > -1 ; --i)
             if(a[i] != num.a[i])
                 return 0;
         return 1;
@@ -369,7 +346,7 @@ public:
     static vector<ll> karatsuba(vector<ll> a,vector<ll> b,ll pow)
     {
         int n = a.size();
-        vector<ll> ans(2*n,0);
+        vector<ll> ans(2*n, 0);
         //if(n <= 1)
         {
             ll carry;
@@ -379,8 +356,8 @@ public:
                 for(int j = 0; j < n; ++j)
                 {
                     ans[i + j] += a[i] * b[j] + carry;
-                    carry = ans[i+j] / pow;
-                    ans[i + j] = ans[i+j] % pow;
+                    carry = ans[i + j] / pow;
+                    ans[i + j] = ans[i + j] % pow;
                 }
                 if(carry)
                     ans[i + n] += carry;
@@ -496,6 +473,6 @@ int main()
     BigInt a, b, c;
     int m;
     cin >> a >> m;
-    cout<< a % m;
+    cout<< a * m;
     return 0;
 }
