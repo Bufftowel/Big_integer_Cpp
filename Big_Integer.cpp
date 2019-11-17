@@ -8,7 +8,7 @@ class BigInt
     #undef ll
     typedef long long int ll;
     typedef vector<int> vi;
-    #define defBase 1000000000;
+    #define defBase 1000000000 // change this accordingly if you are using Convert_Base function
     ll pow;
     int Base;
     vi a;
@@ -192,7 +192,7 @@ public:
         return ans.Convert_Base(9);
     }
     template<typename T>
-    T operator % (T MoDuLo)
+    T operator % (const T& MoDuLo)
     {
         ll ans = 0;
         for(int i = a.size() - 1; i > -1; i--)
@@ -202,12 +202,111 @@ public:
         if(!sign) ans = -ans;
         return ans;
     }
+    template<typename T>
+    BigInt operator / (const T& num)
+    {
+        try {
+            if(num == 0)
+                throw "Divide_by_Zero";
+        }
+        catch(const char* str)
+        {
+            cout << str << "\n";
+            throw; // terminates the program immediately.
+        }
+        if(num > pow)
+        {
+            BigInt n(num);
+            return *this / n;
+        }
+        BigInt ans;
+        bool s_n = 1;
+        ll n = num;
+        if(num < 0) s_n = 0, n = -n;
+        if(abs() < n) return ans;
+        ans = *this;
+        ll carry = 0, term;
+        for(int i = ans.a.size() - 1; i > -1; i--)
+        {
+            term = ans.a[i] + carry * pow;
+            ans.a[i] = term / n;
+            carry = term % n;
+        }
+        ans.sign = !(sign ^ s_n);
+        ans.removeZeros();
+        return ans;
+    }
+    BigInt operator / (const BigInt& num)
+    {
+        try {
+            if(num.abs() == 0)
+                throw "Divide_by_Zero";
+        }
+        catch(const char* str)
+        {
+            cout << str << "\n";
+            throw; // terminates the program immediately.
+        }
+        BigInt ans;
+        if(abs() < num.abs()) return ans;
+        BigInt l = 0, r = *this, mid, p = abs(), q = num.abs();
+        while(l <= r)
+        {
+            mid = (l + r) >> 1;
+            if(q * mid <= p)
+            {
+                 l = mid + 1;
+                 ans = mid;
+            }
+            else r = mid - 1;
+        }
+        ans.sign = !(sign ^ num.sign);
+        return ans;
+    }
+    BigInt operator >> (int n)
+    {
+        BigInt ans = *this;
+        while(n--)
+        {
+            bool carry = 0;
+            for(int i = ans.a.size() - 1; i > -1; i--)
+            {
+                if(carry) ans.a[i] = ans.a[i] + pow;
+                carry = ans.a[i] % 2;
+                ans.a[i] = (ans.a[i] >> 1);
+            }
+        }
+        ans.removeZeros();
+        return ans;
+    }
+    BigInt operator << (int n)
+    {
+        BigInt ans = *this;
+        while(n--)
+        {
+            ans = ans * 2;
+        }
+        return ans;
+    }
+    template<typename T>
+    friend BigInt operator * (const T& n, const BigInt& num)
+    {
+        return num * n;
+    }
+    template<typename T>
+    friend BigInt operator + (const T& n, const BigInt& num)
+    {
+        return num + n;
+    }
+    template<typename T>
+    friend BigInt operator - (const T& n, const BigInt& num)
+    {
+        return -num + n;
+    }
          // calling karatsuba will inevitably pass this (pointer to current object), and if katatsuba
-        // is not a const function, then this will cause error, as it may change it.
+        // is not a const function, then this will cause an error, as it may change it.
        // if we declare karatsuba as static that would mean it won't receive
-      // a implicit object (They don't have access to this pointer). A Static member function can be
-     // called even without a object(using :: and class name). A static member function can only access static
-    // static data member, other static member functions and any other functions from outside the class.
+      // an implicit object (They don't have access to this pointer).
     bool operator > (const BigInt &num) const
     {
         if(sign != num.sign)
@@ -253,9 +352,13 @@ public:
     {
         return !(num == *this);
     }
-    void operator += (BigInt &a)
+    void operator += (const BigInt &a)
     {
         *this = *this + a;
+    }
+    void operator -= (const BigInt &a)
+    {
+        *this = *this - a;
     }
     BigInt operator - () const
     {
@@ -272,9 +375,9 @@ public:
         *this = *this + 1;
         return *this;
     }
-    const BigInt operator ++ (int)   // postfix ( a dummy argument is required to distinguish b/w prefix and post fix C++)
-    {
-        // const function to prevent assignment of postfix (as its not a lvalue in C++)
+    const BigInt operator ++ (int)   // postfix ( a dummy argument is required to distinguish b/w prefix and postfix C++)
+    {                               // const function to prevent assignment of postfix (as its not a lvalue in C++)
+
         BigInt x;
         x = *this;
         ++*this;
@@ -330,9 +433,9 @@ public:
         a.read(s);
         return stream;
     }
-    friend ostream& operator << (ostream &stream, BigInt num)
+    friend ostream& operator << (ostream &stream, const BigInt &num)
     {
-        if(!num.sign)
+        if(!num.sign && !num.a.empty())
             stream << '-';
         if(num.a.empty())
             stream << '0';
@@ -361,7 +464,8 @@ public:
             }
             return ans;
         }
-        int k = n >> 1;
+        int k = n >> 1, m;
+        m = 2 * k;
         vector<ll> x2(a.begin(), a.begin() + k);
         vector<ll> y2(b.begin(),b.begin() + k);
         vector<ll> x1(a.begin() + k, a.end());
@@ -385,7 +489,7 @@ public:
         }
         for(int i = 0; i < (int)x1y1.size(); i++)
         {
-            ans[i + 2 * k] += x1y1[i];
+            ans[i + m] += x1y1[i];
         }
         for(int i = 0; i < (int)x2y2.size(); i++)
         {
@@ -395,6 +499,7 @@ public:
     }
     friend BigInt Multiply_Naive(const BigInt &num1,const BigInt &num2)
     {
+        // working in Base 10 ^ 9 only.
         vector<ll> x(num1.a.begin(),num1.a.end()), y(num2.a.begin(),num2.a.end());
         BigInt res;
         res.sign = !(num1.sign ^ num2.sign);
