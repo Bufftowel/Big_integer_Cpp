@@ -352,13 +352,30 @@ public:
     {
         return !(num == *this);
     }
-    void operator += (const BigInt &a)
+    template<typename T>
+    void operator += (const T &a)
     {
         *this = *this + a;
     }
-    void operator -= (const BigInt &a)
+    template<typename T>
+    void operator -= (const T &a)
     {
         *this = *this - a;
+    }
+    template<typename T>
+    void operator *= (const T &a)
+    {
+        *this = *this * a;
+    }
+    template<typename T>
+    void operator /= (const T &a)
+    {
+        *this = *this / a;
+    }
+    template<typename T>
+    void operator %= (const T &a)
+    {
+        *this = *this % a;
     }
     BigInt operator - () const
     {
