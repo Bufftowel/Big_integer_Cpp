@@ -1,5 +1,5 @@
 # Big_integer_Cpp
-Currently this BigInt class supports all relational, arithmetical and assignment operators.
+Currently this BigInt class supports all relational, arithmetical, assignment and Unary operators.
 
 
 => Make sure to include the following headerfiles :- iostream, iomanip and vector.
