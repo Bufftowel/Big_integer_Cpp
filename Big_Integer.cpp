@@ -9,7 +9,7 @@ class BigInt
     typedef long long int ll;
     typedef vector<int> vi;
     #define defBase 1000000000 // change this accordingly if you are using Convert_Base function
-    ll pow;
+    ll pow10;
     int Base;
     vi a;
     bool sign;
@@ -38,8 +38,8 @@ class BigInt
         if(newBase > 9) return *this;
         BigInt res;
         res.Base = newBase;
-        res.pow = 1;
-        for(int i = 0; i < newBase; i++) res.pow = res.pow * 10;
+        res.pow10 = 1;
+        for(int i = 0; i < newBase; i++) res.pow10 = res.pow10 * 10;
         stringstream ss;
         string s;
         ss << *this;
@@ -58,7 +58,7 @@ public:
     BigInt()
     {
         sign = 1;
-        pow = 1000000000;
+        pow10 = 1000000000;
         Base = 9;
     }
     template<typename T>
@@ -89,8 +89,8 @@ public:
             if(i == (int)ans.a.size()) ans.a.push_back(0);
             carry = carry + ans.a[i];
             if(i < (int)a.size()) carry += a[i];
-            ans.a[i] = carry % pow;
-            carry = carry / pow;
+            ans.a[i] = carry % pow10;
+            carry = carry / pow10;
         }
         if(carry)
             ans.a.push_back(carry);
@@ -124,7 +124,7 @@ public:
                     ans.a[i] = ans.a[i] - num.a[i] + carry;
                     if(ans.a[i] < 0)
                     {
-                        ans.a[i] += pow;
+                        ans.a[i] += pow10;
                         carry = -1;
                     }
                     else
@@ -135,7 +135,7 @@ public:
                     ans.a[i] = ans.a[i] + carry;
                     if(ans.a[i] < 0)
                     {
-                        ans.a[i] += pow;
+                        ans.a[i] += pow10;
                         carry = -1;
                     }
                     else
@@ -176,17 +176,17 @@ public:
         vector<ll> res = karatsuba(n, m);
         ll carry = 0;
         ans.Base = num1.Base;
-        ans.pow = num1.pow;
+        ans.pow10 = num1.pow10;
         for(int i = 0; i < (int)res.size(); ++i)
         {
             carry = carry + res[i];
-            ans.a.push_back(carry % ans.pow);
-            carry = carry / ans.pow;
+            ans.a.push_back(carry % ans.pow10);
+            carry = carry / ans.pow10;
         }
         while(carry)
         {
-            ans.a.push_back(carry % ans.pow);
-            carry = carry / ans.pow;
+            ans.a.push_back(carry % ans.pow10);
+            carry = carry / ans.pow10;
         }
         ans.removeZeros();
         return ans.Convert_Base(9);
@@ -194,10 +194,11 @@ public:
     template<typename T>
     T operator % (const T& MoDuLo)
     {
+        if(MoDuLo == 2) return T(!isEven());
         ll ans = 0;
         for(int i = a.size() - 1; i > -1; i--)
         {
-            ans = (ans * pow + a[i]) % MoDuLo;
+            ans = (ans * pow10 + a[i]) % MoDuLo;
         }
         if(!sign) ans = -ans;
         return ans;
@@ -214,7 +215,7 @@ public:
             cout << str << "\n";
             throw; // terminates the program immediately.
         }
-        if(num > pow)
+        if(num > pow10)
         {
             BigInt n(num);
             return *this / n;
@@ -228,7 +229,7 @@ public:
         ll carry = 0, term;
         for(int i = ans.a.size() - 1; i > -1; i--)
         {
-            term = ans.a[i] + carry * pow;
+            term = ans.a[i] + carry * pow10;
             ans.a[i] = term / n;
             carry = term % n;
         }
@@ -271,7 +272,7 @@ public:
             bool carry = 0;
             for(int i = ans.a.size() - 1; i > -1; i--)
             {
-                if(carry) ans.a[i] = ans.a[i] + pow;
+                if(carry) ans.a[i] = ans.a[i] + pow10;
                 carry = ans.a[i] % 2;
                 ans.a[i] = (ans.a[i] >> 1);
             }
@@ -281,10 +282,10 @@ public:
     }
     BigInt operator << (int n)
     {
-        BigInt ans = *this;
+        BigInt ans = *this, x = 2;
         while(n--)
         {
-            ans = ans * 2;
+            ans = ans * x;
         }
         return ans;
     }
@@ -303,10 +304,10 @@ public:
     {
         return -num + n;
     }
-         // calling karatsuba will inevitably pass this (pointer to current object), and if katatsuba
+         // calling karatsuba will inevitably pass this (pointer to current object) to it, and if katatsuba
         // is not a const function, then this will cause an error, as it may change it.
        // if we declare karatsuba as static that would mean it won't receive
-      // an implicit object (They don't have access to this pointer).
+      // an implicit object (They don't have access to this pointer), resolving the issue.
     bool operator > (const BigInt &num) const
     {
         if(sign != num.sign)
@@ -353,29 +354,34 @@ public:
         return !(num == *this);
     }
     template<typename T>
-    void operator += (const T &a)
+    BigInt operator += (const T &a)
     {
         *this = *this + a;
+        return *this;
     }
     template<typename T>
-    void operator -= (const T &a)
+    BigInt operator -= (const T &a)
     {
         *this = *this - a;
+        return *this;
     }
     template<typename T>
-    void operator *= (const T &a)
+    BigInt operator *= (const T &a)
     {
         *this = *this * a;
+        return *this;
     }
     template<typename T>
-    void operator /= (const T &a)
+    BigInt operator /= (const T &a)
     {
         *this = *this / a;
+        return *this;
     }
     template<typename T>
-    void operator %= (const T &a)
+    BigInt operator %= (const T &a)
     {
         *this = *this % a;
+        return *this;
     }
     BigInt operator - () const
     {
@@ -429,6 +435,9 @@ public:
         ans.sign = 1;
         return ans;
     }
+    friend BigInt abs(const BigInt& num) {
+        return num.abs();
+    }
     int length()
     {
         int l = a[a.size() - 1], cnt = 0;
@@ -441,8 +450,7 @@ public:
     }
        // using reference of streams as they immediately need to be changed after use.
       //  cannot define methods in stream classes (as left operand is the one operator's definition should be in)
-     //   hence overloading (<<,>>) as friend (not member function of this class but the scope is only in this class)
-    //    (you can also define them globally.)
+     //   hence overloading (<<,>>) as friend (you can also define them globally.)
     friend istream& operator >> (istream &stream, BigInt &a)  // return types are streams themselves so that chaining
     {                                                        // is possible. e.g. cin >> a >> b;
         string s;
@@ -514,6 +522,24 @@ public:
         }
         return ans;
     }
+    /** Miscellaneous Functions **/
+    bool isEven()
+    {
+        if(a.empty()) return 1;
+        return !(a[0] % 2);
+    }
+    template<typename T>
+    BigInt pow(T n)
+    {
+        if(n == 0) return BigInt(1);
+        if(n == 1) return *this;
+        if(n % 2 == 0)
+        {
+            BigInt x = pow(n / 2);
+            return x * x;
+        }
+        else return pow(n - 1) * (*this);
+    }
     friend BigInt Multiply_Naive(const BigInt &num1,const BigInt &num2)
     {
         // working in Base 10 ^ 9 only.
@@ -547,6 +573,6 @@ int main()
 {
     BigInt a, b;
     cin >> a >> b;
-    cout << a * b << "\n";
+    cout << a * b;
     return 0;
 }
