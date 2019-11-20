@@ -161,7 +161,7 @@ public:
         ans.read(s);
         return *this - ans;
     }
-    BigInt operator * (const BigInt &num) const // this(pointer) is also passed implicitly, we cannot change that either
+    BigInt operator * (const BigInt &num) const // this(pointer) is passed implicitly, we cannot change that.
     {
         BigInt num1 = Convert_Base(5);
         BigInt num2 = num.Convert_Base(5);
@@ -398,8 +398,8 @@ public:
         *this = *this + 1;
         return *this;
     }
-    const BigInt operator ++ (int)   // postfix ( a dummy argument is required to distinguish b/w prefix and postfix C++)
-    {                               // const function to prevent assignment of postfix (as its not a lvalue in C++)
+    const BigInt operator ++ (int)   // postfix ( a dummy argument is required to distinguish b/w prefix and postfix in C++)
+    {                               // const return type function to prevent assignment of postfix (as its not a lvalue in C++)
 
         BigInt x;
         x = *this;
@@ -437,16 +437,6 @@ public:
     }
     friend BigInt abs(const BigInt& num) {
         return num.abs();
-    }
-    int length()
-    {
-        int l = a[a.size() - 1], cnt = 0;
-        while(l)
-        {
-            cnt++;
-            l /= 10;
-        }
-        return Base * (a.size() - 1) + cnt;
     }
        // using reference of streams as they immediately need to be changed after use.
       //  cannot define methods in stream classes (as left operand is the one operator's definition should be in)
@@ -497,14 +487,8 @@ public:
         vector<ll> y1(b.begin() + k, b.end());
         vector<ll> x1y1 = karatsuba(x1, y1);
         vector<ll> x2y2 = karatsuba(x2, y2);
-        for(int i = 0; i < k; i++)
-        {
-            x1[i] = x2[i] + x1[i];
-        }
-        for(int i = 0; i < k; i++)
-        {
-            y1[i] = y2[i] + y1[i];
-        }
+        for(int i = 0; i < k; i++) x1[i] = x2[i] + x1[i];
+        for(int i = 0; i < k; i++) y1[i] = y2[i] + y1[i];
         vector<ll> val = karatsuba(x1, y1);
         for(int i = 0; i < (int)val.size(); ++i)
         {
@@ -512,14 +496,8 @@ public:
             if(i < (int)x2y2.size()) val[i] -= x2y2[i];
             ans[i + k] += val[i];
         }
-        for(int i = 0; i < (int)x1y1.size(); i++)
-        {
-            ans[i + m] += x1y1[i];
-        }
-        for(int i = 0; i < (int)x2y2.size(); i++)
-        {
-            ans[i] += x2y2[i];
-        }
+        for(int i = 0; i < (int)x1y1.size(); i++) ans[i + m] += x1y1[i];
+        for(int i = 0; i < (int)x2y2.size(); i++) ans[i] += x2y2[i];
         return ans;
     }
     /** Miscellaneous Functions **/
@@ -540,9 +518,19 @@ public:
         }
         else return pow(n - 1) * (*this);
     }
-    friend BigInt Multiply_Naive(const BigInt &num1,const BigInt &num2)
+    int length()
     {
-        // working in Base 10 ^ 9 only.
+        if(a.empty()) return 0;
+        int l = a[a.size() - 1], cnt = 0;
+        while(l)
+        {
+            cnt++;
+            l /= 10;
+        }
+        return Base * (a.size() - 1) + cnt;
+    }
+    friend BigInt Multiply_Naive(const BigInt &num1,const BigInt &num2)
+    {   // working in Base 10 ^ 9 only.
         vector<ll> x(num1.a.begin(),num1.a.end()), y(num2.a.begin(),num2.a.end());
         BigInt res;
         res.sign = !(num1.sign ^ num2.sign);
