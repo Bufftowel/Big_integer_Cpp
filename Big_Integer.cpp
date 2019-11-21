@@ -192,8 +192,22 @@ public:
         return ans.Convert_Base(9);
     }
     template<typename T>
+    void check_Zero(const T& num)
+    {
+        try {
+            if(num == 0)
+                throw "Divide_by_Zero";
+        }
+        catch(const char* str)
+        {
+            cout << str << "\n";
+            throw; // terminates the program immediately.
+        }
+    }
+    template<typename T>
     T operator % (const T& MoDuLo)
     {
+        check_Zero(MoDuLo);
         if(MoDuLo == 2) return T(!isEven());
         ll ans = 0;
         for(int i = a.size() - 1; i > -1; i--)
@@ -206,15 +220,7 @@ public:
     template<typename T>
     BigInt operator / (const T& num)
     {
-        try {
-            if(num == 0)
-                throw "Divide_by_Zero";
-        }
-        catch(const char* str)
-        {
-            cout << str << "\n";
-            throw; // terminates the program immediately.
-        }
+        check_Zero(num);
         if(num > pow10)
         {
             BigInt n(num);
@@ -239,45 +245,40 @@ public:
     }
     BigInt operator % (const BigInt& MoDuLo)
     {
-        return this -> DivisionUtl(MoDuLo).second;
+        return this -> Division_Utl(MoDuLo).second;
     }
     BigInt operator / (const BigInt& num)
     {
-        return this -> DivisionUtl(num).first;
+        return this -> Division_Utl(num).first;
     }
-    pair<BigInt, BigInt> DivisionUtl(const BigInt& num)  // using Column Division
+    pair<BigInt, BigInt> Division_Utl(const BigInt& num)  // using Column Division
     {
-        try {
-            if(num.abs() == 0)
-                throw "Divide_by_Zero";
-        }
-        catch(const char* str)
-        {
-            cout << str << "\n";
-            throw; // terminates the program immediately.
-        }
+        check_Zero(num);
         BigInt ans, zero;
         if(abs() < num.abs()) return make_pair(ans, *this);
         string p = abs().to_string();
         string q = num.abs().to_string();
         BigInt d = num.abs();
-        vector<int> sol(p.size() + 100, 0);
-        int n = p.size(), m = q.size(), r = 0, k = 0;
+        vector<int> sol(p.size() + q.size() + 100, 0);
+        int n = p.size(), m = q.size(), r = 0, k = 0, i = 0, y;
         string aux = "";
         aux.reserve(n);
-        for(int i = 0; i < n;)
+        while(i < n)
         {
-            aux = aux + p.substr(i, m - r);
+            y = min(i + m - r, n);
+            for(int x = i; x < y; x++) aux = aux + p[x];
             BigInt c1;
             c1.read(aux);
-            k += m - r;
-            if(c1 < d && i + m - r < n)
+            if(c1 < d && y == n) break;
+            k += y - i;
+            while(c1 < d && y < n)
             {
-                aux = aux + p[i + m - r];
+                aux = aux + p[y];
                 c1.a.clear();
                 c1.read(aux);
                 ++k;
                 ++i;
+                ++y;
             }
             int cnt = 0;
             while(c1 >= d)
@@ -286,10 +287,15 @@ public:
                 c1 = c1 - d;
             }
             sol[k] = cnt;
-            i += m - r;
+            i = y;
+            aux = c1.to_string();
             r = c1.length();
-            if(r) aux = c1.to_string();
-            else aux = "";
+            if(c1 == 0)
+            {
+                r = 0;
+                aux = "";
+                while(i < n && p[i] == '0') i++, k++;
+            }
         }
         string s;
         s.reserve(k);
@@ -435,7 +441,6 @@ public:
     }
     const BigInt operator ++ (int)   // postfix ( a dummy argument is required to distinguish b/w prefix and postfix in C++)
     {                               // const return type function to prevent assignment of postfix (as its not a lvalue in C++)
-
         BigInt x;
         x = *this;
         ++*this;
@@ -522,14 +527,8 @@ public:
         vector<ll> y1(b.begin() + k, b.end());
         vector<ll> x1y1 = karatsuba(x1, y1);
         vector<ll> x2y2 = karatsuba(x2, y2);
-        for(int i = 0; i < k; i++)
-        {
-            x1[i] = x2[i] + x1[i];
-        }
-        for(int i = 0; i < k; i++)
-        {
-            y1[i] = y2[i] + y1[i];
-        }
+        for(int i = 0; i < k; i++) x1[i] = x2[i] + x1[i];
+        for(int i = 0; i < k; i++) y1[i] = y2[i] + y1[i];
         vector<ll> val = karatsuba(x1, y1);
         for(int i = 0; i < (int)val.size(); ++i)
         {
@@ -537,14 +536,8 @@ public:
             if(i < (int)x2y2.size()) val[i] -= x2y2[i];
             ans[i + k] += val[i];
         }
-        for(int i = 0; i < (int)x1y1.size(); i++)
-        {
-            ans[i + m] += x1y1[i];
-        }
-        for(int i = 0; i < (int)x2y2.size(); i++)
-        {
-            ans[i] += x2y2[i];
-        }
+        for(int i = 0; i < (int)x1y1.size(); i++) ans[i + m] += x1y1[i];
+        for(int i = 0; i < (int)x2y2.size(); i++) ans[i] += x2y2[i];
         return ans;
     }
     /** Miscellaneous Functions **/
@@ -560,16 +553,27 @@ public:
         if(n == 1) return *this;
         if(n % 2 == 0)
         {
-            BigInt x = pow(n / 2);
+            BigInt x = pow(n >> 1);
             return x * x;
         }
         else return pow(n - 1) * (*this);
+    }
+    template<typename T, typename Y>
+    BigInt pow_Mod(T n, Y MoDuLo)
+    {
+        if(n == 0) return BigInt(1);
+        if(n == 1) return *this % MoDuLo;
+        if(n % 2 == 0)
+        {
+            BigInt x = pow_Mod(n >> 1, MoDuLo);
+            return x * x % MoDuLo;
+        }
+        else return (pow_Mod(n - 1, MoDuLo) * (*this) % MoDuLo) % MoDuLo;
     }
     int length()
     {
         if(a.empty()) return 0;
         int l = a[a.size() - 1], cnt = 0;
-        if(a.size() == 1 && !l) return 0;
         while(l)
         {
             cnt++;
@@ -577,9 +581,8 @@ public:
         }
         return Base * (a.size() - 1) + cnt;
     }
-    friend BigInt Multiply_Naive(const BigInt &num1,const BigInt &num2)
+    friend BigInt Multiply_Naive(const BigInt &num1,const BigInt &num2)  // working in Base 10 ^ 9 only.
     {
-        // working in Base 10 ^ 9 only.
         vector<ll> x(num1.a.begin(),num1.a.end()), y(num2.a.begin(),num2.a.end());
         BigInt res;
         res.sign = !(num1.sign ^ num2.sign);
