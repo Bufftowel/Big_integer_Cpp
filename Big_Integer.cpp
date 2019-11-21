@@ -161,7 +161,7 @@ public:
         ans.read(s);
         return *this - ans;
     }
-    BigInt operator * (const BigInt &num) const // this(pointer) is passed implicitly, we cannot change that.
+    BigInt operator * (const BigInt &num) const // this(pointer) is also passed implicitly, we cannot change that either
     {
         BigInt num1 = Convert_Base(5);
         BigInt num2 = num.Convert_Base(5);
@@ -237,7 +237,15 @@ public:
         ans.removeZeros();
         return ans;
     }
+    BigInt operator % (const BigInt& MoDuLo)
+    {
+        return this -> DivisionUtl(MoDuLo).second;
+    }
     BigInt operator / (const BigInt& num)
+    {
+        return this -> DivisionUtl(num).first;
+    }
+    pair<BigInt, BigInt> DivisionUtl(const BigInt& num)  // using Column Division
     {
         try {
             if(num.abs() == 0)
@@ -248,21 +256,48 @@ public:
             cout << str << "\n";
             throw; // terminates the program immediately.
         }
-        BigInt ans;
-        if(abs() < num.abs()) return ans;
-        BigInt l = 0, r = *this, mid, p = abs(), q = num.abs();
-        while(l <= r)
+        BigInt ans, zero;
+        if(abs() < num.abs()) return make_pair(ans, *this);
+        string p = abs().to_string();
+        string q = num.abs().to_string();
+        BigInt d = num.abs();
+        vector<int> sol(p.size() + 100, 0);
+        int n = p.size(), m = q.size(), r = 0, k = 0;
+        string aux = "";
+        aux.reserve(n);
+        for(int i = 0; i < n;)
         {
-            mid = (l + r) >> 1;
-            if(q * mid <= p)
+            aux = aux + p.substr(i, m - r);
+            BigInt c1;
+            c1.read(aux);
+            k += m - r;
+            if(c1 < d && i + m - r < n)
             {
-                 l = mid + 1;
-                 ans = mid;
+                aux = aux + p[i + m - r];
+                c1.a.clear();
+                c1.read(aux);
+                ++k;
+                ++i;
             }
-            else r = mid - 1;
+            int cnt = 0;
+            while(c1 >= d)
+            {
+                cnt++;
+                c1 = c1 - d;
+            }
+            sol[k] = cnt;
+            i += m - r;
+            r = c1.length();
+            if(r) aux = c1.to_string();
+            else aux = "";
         }
+        string s;
+        s.reserve(k);
+        for(int i = 0; i <= min(k, (int)sol.size() - 1); i++) s = s + char(sol[i] + '0');
+        ans.read(s);
+        ans.removeZeros();
         ans.sign = !(sign ^ num.sign);
-        return ans;
+        return make_pair(ans, BigInt(aux));
     }
     BigInt operator >> (int n)
     {
@@ -487,8 +522,14 @@ public:
         vector<ll> y1(b.begin() + k, b.end());
         vector<ll> x1y1 = karatsuba(x1, y1);
         vector<ll> x2y2 = karatsuba(x2, y2);
-        for(int i = 0; i < k; i++) x1[i] = x2[i] + x1[i];
-        for(int i = 0; i < k; i++) y1[i] = y2[i] + y1[i];
+        for(int i = 0; i < k; i++)
+        {
+            x1[i] = x2[i] + x1[i];
+        }
+        for(int i = 0; i < k; i++)
+        {
+            y1[i] = y2[i] + y1[i];
+        }
         vector<ll> val = karatsuba(x1, y1);
         for(int i = 0; i < (int)val.size(); ++i)
         {
@@ -496,8 +537,14 @@ public:
             if(i < (int)x2y2.size()) val[i] -= x2y2[i];
             ans[i + k] += val[i];
         }
-        for(int i = 0; i < (int)x1y1.size(); i++) ans[i + m] += x1y1[i];
-        for(int i = 0; i < (int)x2y2.size(); i++) ans[i] += x2y2[i];
+        for(int i = 0; i < (int)x1y1.size(); i++)
+        {
+            ans[i + m] += x1y1[i];
+        }
+        for(int i = 0; i < (int)x2y2.size(); i++)
+        {
+            ans[i] += x2y2[i];
+        }
         return ans;
     }
     /** Miscellaneous Functions **/
@@ -522,6 +569,7 @@ public:
     {
         if(a.empty()) return 0;
         int l = a[a.size() - 1], cnt = 0;
+        if(a.size() == 1 && !l) return 0;
         while(l)
         {
             cnt++;
@@ -530,7 +578,8 @@ public:
         return Base * (a.size() - 1) + cnt;
     }
     friend BigInt Multiply_Naive(const BigInt &num1,const BigInt &num2)
-    {   // working in Base 10 ^ 9 only.
+    {
+        // working in Base 10 ^ 9 only.
         vector<ll> x(num1.a.begin(),num1.a.end()), y(num2.a.begin(),num2.a.end());
         BigInt res;
         res.sign = !(num1.sign ^ num2.sign);
