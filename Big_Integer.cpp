@@ -15,6 +15,8 @@ class BigInt
     bool sign;
     void read(string &s)
     {
+        a.clear(); // Clearing previous value if there was any.
+        sign = 1;
         ll curr;
         int k = 0;
         while(k < (int)s.size() && (s[k] == '-' || s[k] == '+'))
@@ -465,7 +467,6 @@ public:
         ss << x;
         string s;
         ss >> s;
-        a.clear();
         read(s);
         return x;
     }
@@ -481,11 +482,11 @@ public:
        // using reference of streams as they immediately need to be changed after use.
       //  cannot define methods in stream classes (as left operand is the one operator's definition should be in)
      //   hence overloading (<<,>>) as friend (you can also define them globally.)
-    friend istream& operator >> (istream &stream, BigInt &a)  // return types are streams themselves so that chaining
+    friend istream& operator >> (istream &stream, BigInt &num)  // return types are streams themselves so that chaining
     {                                                        // is possible. e.g. cin >> a >> b;
         string s;
         stream >> s;
-        a.read(s);
+        num.read(s);
         return stream;
     }
     friend ostream& operator << (ostream &stream, const BigInt &num)
