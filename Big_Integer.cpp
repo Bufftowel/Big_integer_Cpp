@@ -610,16 +610,10 @@ public:
     }
 };
 
-int main()
-{
-    int t = 1;
-    cin >> t;
-    BigInt a, b;
-    while(t--)
-    {
-
-        cin >> a >> b;
-        cout << a << " " << b << "\n";
-    }
-    return 0;
+int main()	
+{	
+    BigInt a, b;	   
+    cin >> a >> b;	    
+    cout << a * b;	   
+    return 0;	    
 }
